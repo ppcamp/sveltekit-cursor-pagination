@@ -1,3 +1,3 @@
-function paginate() {
+function paginate() {}
 
-}
+function paginate2() {}

@@ -3,5 +3,82 @@
 		{
 			"path": "."
 		}
-	]
+	],
+	"settings": {
+		"tailwindCSS.includeLanguages": {
+			"html": "html",
+			"javascript": "javascript",
+			"css": "css",
+			"plain": "ts",
+			"svelte": "svelte"
+		},
+		"files.exclude": {
+			"**/.git": true,
+			"**/.svn": true,
+			"**/.hg": true,
+			"**/CVS": true,
+			"**/.DS_Store": true,
+			"**/Thumbs.db": true,
+			"**/node_modules": true,
+			"**/package-lock.json": true,
+			"**/.svelte-kit": true,
+			"**/.eslintignore": true,
+			"**/.eslintrc.cjs": true,
+			"**/.npmrc": true,
+			"**/.prettierignore": true,
+			"**/.prettierrc": true,
+			"**/postcss.config.js": true,
+			"**/svelte.config.js": true,
+			"**/vite.config.ts": true,
+			"**/tsconfig.json": true,
+			"**.code-workspace": true,
+			"**/tailwind.config.js": true
+		},
+		"workbench.colorCustomizations": {
+			// inactive colors
+			"activityBar.background": "#464646",
+			"activityBar.inactiveForeground": "#313131",
+			// active element on bar
+			"activityBar.activeBackground": "#00000041",
+			"activityBar.foreground": "#ffffff",
+			"activityBar.activeBorder": "#00000000",
+			// notify color
+			"activityBarBadge.background": "#ffffff",
+			"activityBarBadge.foreground": "#000000",
+			// bottom bar
+			"statusBar.background": "#464646",
+			"statusBar.border": "#ff000000",
+			"statusBarItem.remoteBackground": "#00000044"
+		},
+		"editor.tabSize": 2,
+		"editor.formatOnSave": true,
+		"editor.insertSpaces": false,
+		"git.rebaseWhenSync": true,
+		"git.fetchOnPull": true,
+		"[svelte]": {
+			"editor.defaultFormatter": "svelte.svelte-vscode"
+		},
+		"[json]": {
+			"editor.defaultFormatter": "esbenp.prettier-vscode"
+		},
+		"[javascript]": {
+			"editor.defaultFormatter": "esbenp.prettier-vscode"
+		},
+		"[html]": {
+			"editor.defaultFormatter": "esbenp.prettier-vscode"
+		},
+		"[typescript]": {
+			"editor.defaultFormatter": "esbenp.prettier-vscode"
+		}
+	},
+	"extensions": {
+		"recommendations": [
+			"esbenp.prettier-vscode",
+			"svelte.svelte-vscode",
+			"usernamehw.errorlens",
+			"pflannery.vscode-versionlens",
+			"dbaeumer.vscode-eslint",
+			"bradlc.vscode-tailwindcss"
+		]
+	}
 }

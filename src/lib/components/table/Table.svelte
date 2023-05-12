@@ -1,7 +1,5 @@
-
 <script lang="ts">
-
-    function innerPagination() {
-
-    }
+	function innerPagination() {}
 </script>
+
+<div class="a">asda</div>
