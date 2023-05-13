@@ -2,7 +2,7 @@ import { page } from '$app/stores';
 import type { ErrorResponse, ServerResponse } from '$types/status';
 import type { LoadEvent } from '@sveltejs/kit';
 import { get } from 'svelte/store';
-import type { ClientResponse, ErrorClientResponse } from './status';
+import type { ClientResponse } from './status';
 
 type ServerEvent = Pick<LoadEvent, 'fetch' | 'url'>;
 

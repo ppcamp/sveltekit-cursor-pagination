@@ -1,6 +1,4 @@
-export type BaseResponse<T> = {
-	data: T;
-};
+export type BaseResponse<T extends object> = T;
 
 export type ErrorResponse = {
 	error: {

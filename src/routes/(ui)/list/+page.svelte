@@ -5,18 +5,20 @@
 	import { toastStore } from '@skeletonlabs/skeleton';
 	import type { PageLoad } from './$types';
 	import { isOk } from '$fetchers/internal/status';
-	import type { ListResponse } from '$types/list';
+	import type { GotApiItemList } from '$types/list';
+	import { capitalize } from '$lib/utils/strings';
 
 	export let data: PageLoad;
 
 	$: isErr = !isOk(data);
-	$: rows = isErr ? [] : (data.data as ListResponse[]);
+	$: rows = isErr ? [] : (data.data as GotApiItemList[]);
 
 	type TData = (typeof rows)[number];
 	const columns: Column<TData>[] = [
+		{ name: 'Slug', row: (v) => `${capitalize(v.slug)}` },
 		{ name: 'Name', row: (v) => `${v.name}` },
-		{ name: 'Symbol', row: (v) => `${v.symbol}` },
-		{ name: 'Weight', row: (v) => `${v.weight}` }
+		{ name: 'House', row: (v) => `${capitalize(v.house.slug)}` },
+		{ name: 'Quotes', row: (v) => `${JSON.stringify(v.quotes)}` }
 	];
 
 	const show = (v: TData) => {
