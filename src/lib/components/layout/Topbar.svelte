@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { AppBar, Avatar, LightSwitch } from '@skeletonlabs/skeleton';
-	import Icon from '../icons/Icon.svelte';
+	import IconButton from '$components/IconButton.svelte';
+	import { goto } from '$app/navigation';
 </script>
 
 <AppBar>
 	<svelte:fragment slot="lead">
-		<Icon icon="home" />
+		<IconButton icon="home" on:click={() => goto('/')} />
 	</svelte:fragment>
 	<svelte:fragment slot="trail">
 		<LightSwitch />

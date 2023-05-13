@@ -1,18 +1,24 @@
 <script lang="ts" context="module">
-	const available = ['delete', 'home'] as const;
+	const available = ['delete', 'home', 'arrow_forward', 'settings_ethernet'] as const;
 
-	type Icon = (typeof available)[number];
+	export type IconName = (typeof available)[number];
+	export type Variant = 'default' | 'symbols-outlined';
 </script>
 
 <script lang="ts">
-	export let icon: Icon | undefined = undefined;
+	import { cssMap } from '$lib/utils/dom';
+
+	export let icon: IconName | undefined = undefined;
+	export let variant: Variant = 'default';
+
+	let googleClass = variant === 'default' ? 'material-icons' : 'material-symbols-outlined';
 
 	let klass: string = '';
 	export { klass as class };
 </script>
 
 {#if !$$slots.svg}
-	<span class={'material-icons ' + klass}>{icon}</span>
+	<span class={cssMap(googleClass, klass)}>{icon}</span>
 {:else}
 	<slot name="svg" />
 {/if}

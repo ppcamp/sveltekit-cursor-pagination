@@ -5,7 +5,7 @@
 	// NOTE: this will be renamed skeleton.css in the v2.x release.
 	import '@skeletonlabs/skeleton/styles/skeleton.css';
 	// Finally, your application's global stylesheet (sometimes labeled 'app.css')
-	import '../app.css';
+	import '../../app.css';
 
 	import { AppShell, Modal, Toast } from '@skeletonlabs/skeleton';
 	import Footer from '$lib/components/layout/Footer.svelte';

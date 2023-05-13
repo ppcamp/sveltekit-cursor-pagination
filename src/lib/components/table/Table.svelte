@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { cssMap } from '$lib/utils/dom';
+
 	import { createEventDispatcher } from 'svelte';
 	import type { Column } from './types';
 	import { capitalize } from '$lib/utils/strings';
@@ -15,7 +17,7 @@
 	$: hasActions = $$slots.actions;
 </script>
 
-<div class={klass + 'm-5'}>
+<div class={cssMap('m-5', klass)}>
 	<table class="table">
 		<thead class="text-left">
 			{#each columns as c}
