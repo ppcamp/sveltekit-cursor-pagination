@@ -2,4 +2,4 @@
 	function innerPagination() {}
 </script>
 
-<div class="a">asda</div>
+<div class="">asda</div>
