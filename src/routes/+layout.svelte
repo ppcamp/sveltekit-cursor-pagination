@@ -17,7 +17,7 @@
 </svelte:head>
 
 <Modal />
-<Toast />
+<Toast position="br" />
 <AppShell>
 	<svelte:fragment slot="header">
 		<Topbar />
