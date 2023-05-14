@@ -1,14 +1,13 @@
 import { page } from '$app/stores';
 import type { ErrorResponse, ServerResponse } from '$types/status';
-import type { LoadEvent } from '@sveltejs/kit';
 import { get } from 'svelte/store';
 import type { ClientResponse } from './status';
-
-type ServerEvent = Pick<LoadEvent, 'fetch' | 'url'>;
+import type { ServerEvent } from '$types/utils';
+import { browser } from '$app/environment';
 
 const doFetch = <Type>(url: string, event?: ServerEvent) => {
 	const fetcher = event?.fetch ?? fetch;
-	const origin = event?.url.origin ?? get(page).url.origin;
+	const origin = event?.url.origin ?? 'http://localhost:5000'; // browser ? get(page)?.url.origin :
 
 	let localURL = new URL(url, origin);
 

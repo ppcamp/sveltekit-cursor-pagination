@@ -39,7 +39,7 @@ const simulateSQLapi = async (fetch: Function, pageToken: string, pageSize: numb
 
 	const slice = data.slice(pageTokenNumber, toPageSize);
 	// pass a cursor to a pagination that doesn't exist, telling that you finish the pagination
-	const nextPageToken = !reachEndCursor ? slice[slice.length - 1].slug : 'EOC';
+	const nextPageToken = !reachEndCursor ? data[toPageSize].slug : 'EOC';
 
 	return { data: slice, nextPageToken: encrypt(nextPageToken) };
 };

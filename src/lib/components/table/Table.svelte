@@ -1,69 +1,70 @@
 <script lang="ts">
+	import { createPagination } from './pagination';
+
 	import Pagination from './Pagination.svelte';
-
 	import { cssMap } from '$lib/utils/dom';
-
-	import { createEventDispatcher } from 'svelte';
-	import type { Column } from './types';
+	import type { Column, FetchFunc } from './types';
 	import { capitalize } from '$lib/utils/strings';
-	import Spacer from '../Spacer.svelte';
-
-	const dispatch = createEventDispatcher();
+	import Spacer from '$components/Spacer.svelte';
+	import BeforeMount from '$components/BeforeMount.svelte';
 
 	type TData = $$Generic;
 
 	let klass: string = '';
 	export { klass as class };
 	export let columns: Column<TData>[];
-	export let data: TData[];
+	export let fetcher: FetchFunc<TData>;
+
+	const pagination = createPagination(fetcher);
+	const {
+		rows,
+		cursors: { current: currentCursor, end: endCursor }
+	} = pagination;
 
 	$: hasActions = $$slots.actions;
 </script>
 
-<div class={cssMap('m-5', klass)}>
-	<table class="inline-block table">
-		<thead class="text-left">
-			{#each columns as c}
-				<th class="table-cell">{capitalize(c.name)}</th>
-			{/each}
+<BeforeMount promise={pagination.fetch()}>
+	<div class={cssMap('m-5', klass)}>
+		<table class="inline-block table">
+			<thead class="text-left">
+				{#each columns as c}
+					<th class="table-cell">{capitalize(c.name)}</th>
+				{/each}
 
-			{#if hasActions}
-				<th class="text-center">Actions</th>
-			{/if}
-		</thead>
+				{#if hasActions}
+					<th class="text-center">Actions</th>
+				{/if}
+			</thead>
 
-		<tbody class="text-left">
-			{#each data as value, index}
-				<tr class="table-row">
-					{#each columns as c}
-						<td class="table-cell max-w-[50rem] overflow-hidden text-ellipsis">{c.row(value)}</td>
-					{/each}
+			<tbody class="text-left">
+				<!-- {#key $currentCursor} -->
+				{#each $rows as row, index}
+					<tr class="table-row">
+						{#each columns as c}
+							<td class="table-cell max-w-[50rem] overflow-hidden text-ellipsis">{c.row(row)}</td>
+						{/each}
 
-					{#if hasActions}
-						<td class="text-center">
-							<slot name="actions" {value} {index} />
-						</td>
-					{/if}
-				</tr>
-			{/each}
-		</tbody>
-	</table>
+						{#if hasActions}
+							<td class="text-center">
+								<slot name="actions" value={row} {index} />
+							</td>
+						{/if}
+					</tr>
+				{/each}
+				<!-- {/key} -->
+			</tbody>
+		</table>
 
-	<Spacer />
+		<Spacer />
 
-	<div class="container flex rounded bg-surface-800 p-5 align-middle">
-		<div class="w-full">
-			<div class="f flex align-middle">
-				<b>Total</b>
-				<span class="badge variant-soft-primary ml-5"> {data.length} Elements </span>
-			</div>
-		</div>
-
-		<div class="flex w-full justify-end">
-			<Pagination />
-		</div>
+		<Pagination
+			rowsCount={$rows.length}
+			on:next={pagination.next}
+			disableNext={$currentCursor == $endCursor && $endCursor != ''}
+		/>
 	</div>
-</div>
+</BeforeMount>
 
 <style lang="scss">
 	.f {

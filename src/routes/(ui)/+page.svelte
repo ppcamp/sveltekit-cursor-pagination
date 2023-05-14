@@ -1,5 +1,5 @@
 <script lang="ts">
-	import IconButton from '$components/IconButton.svelte';
+	import IconButton from '$lib/components/buttons/IconButton.svelte';
 	import { modalStore, type ModalSettings } from '@skeletonlabs/skeleton';
 	import fetcher from '$lib/fetchers/server';
 	import { isOk } from '$lib/fetchers/internal/status';

@@ -1,43 +1,84 @@
-import type { ListResponse } from '$types/list';
 import { derived, get, writable } from 'svelte/store';
+import type { FetchFunc } from './types';
 
-type Pagination = {
-	pageSize?: number;
-	pageToken?: string;
-};
+// curr	''	Z		C			EOL
+// next	Z		C		EOL		''
+// data	!		!		!			NULL
+// stack		[]	[Z]	[Z,C]	[Z,C]
+// prev	''	''	Z			C
+// <<		''			Z			Z
+// >>		''						C
 
-const createPagination = <Type>(
-	fn: (p: Pagination) => Promise<ListResponse<Type>>,
-	init?: { pageSize: number }
-) => {
-	const rows = writable<Type>();
-	const size = writable<number>(init?.pageSize ?? 10);
+export const createPagination = <Type>(fn: FetchFunc<Type>, init?: { pageSize: number }) => {
+	//#region stores
+	const rows = writable<Array<Type>>([]);
+	const pageSize = writable<number>(init?.pageSize ?? 10);
 
-	const current = writable<string>('');
-	const tokens = writable<string[]>([]);
+	const tokens = writable<string[]>(['']);
+	const currentCursor = writable<string>('');
+	const _canFetch = writable<boolean>(true);
+	const nextCursor = writable<string>('');
 
-	// const token = derived(tokens, (values) => (!values.length ? '' : values[values.length - 1]), '');
-	const nextToken = derived(
+	//#endregion
+
+	//#region subs
+	const lastCursor = derived(
 		tokens,
 		(values) => (!values.length ? '' : values[values.length - 1]),
 		''
 	);
+	const endCursor = derived(
+		[tokens, _canFetch],
+		([values, can]) => (!values.length || can ? '' : values[values.length - 1]),
+		''
+	);
+	const beginCursor = derived(tokens, (values) => (!values.length ? '' : values[0]), '');
+
+	// whenever pageSize changes, we need to drop old (future) tokens
+	// example, imagine that we have 7 pages, we already fetch them all and have all tokens,
+	// but we are currently in 5th page, and we change the pageSize. Thus, all tokens from that point to further aren't valid
+	// cause they won't reflect the data correctly
+	pageSize.subscribe((v) => {
+		const f = get(tokens).findIndex((v) => v == get(currentCursor));
+		if (f >= 0) {
+			tokens.update((v) => v.slice(0, f)); // drop old tokens, since they aren't valid due to pagination changes
+			_canFetch.set(true); // reset the cursor to blank again;
+		}
+	});
+	//#endregion
+
+	//#region methods
+	const _preload = async () => {
+		// prefetch to see if there's more
+		const resp = await fn({ pageSize: get(pageSize), pageToken: get(nextCursor) });
+		if (!resp.data.length) _canFetch.set(false); // reached the end of cursor
+	};
 
 	const fetch = async () => {
-		const resp = await fn({ pageSize: get(size), pageToken: get(current) });
+		let resp = await fn({ pageSize: get(pageSize), pageToken: get(currentCursor) });
 		rows.set(resp.data);
-		tokens.update((v) => [...v, resp.nextPageToken]);
-	};
+		nextCursor.set(resp.nextPageToken);
 
-	// const previous = async () => {
-	// 	const prev = get(tokens);
-	// 	current.set(prev[prev.length - 1]);
-	// };
+		_preload();
+	};
 
 	const next = async () => {
-		const prev = get(tokens);
-		current.set(prev[prev.length - 1]);
+		currentCursor.set(get(nextCursor));
+		tokens.update((v) => [...v, get(currentCursor)]);
+		await fetch();
 	};
+	//#endregion
 
-	return { size, fetch, rows };
+	return {
+		pageSize,
+		rows,
+		cursors: {
+			begin: beginCursor,
+			end: endCursor,
+			current: currentCursor,
+			next: nextCursor
+		},
+		next,
+		fetch
+	};
 };

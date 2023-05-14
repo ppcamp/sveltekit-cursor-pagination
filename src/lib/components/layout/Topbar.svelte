@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { AppBar, Avatar, LightSwitch } from '@skeletonlabs/skeleton';
-	import IconButton from '$components/IconButton.svelte';
+	import IconButton from '$lib/components/buttons/IconButton.svelte';
 	import { goto } from '$app/navigation';
 </script>
 

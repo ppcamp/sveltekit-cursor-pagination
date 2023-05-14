@@ -1,13 +1,16 @@
 export type ListResponse<T> = {
-	data: T;
+	data: Array<T>;
 	nextPageToken: string;
 };
 
 export type GotApiItem = {
 	name: string;
 	slug: string;
-	house: string | null;
+	house?: {
+		slug: string;
+		name: string;
+	};
 	quotes: string[];
 };
 
-export type GotApiItemList = ListResponse<GotApiItem[]>;
+export type GotApiItemList = ListResponse<GotApiItem>;
