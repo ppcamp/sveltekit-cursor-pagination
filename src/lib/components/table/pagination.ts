@@ -9,6 +9,7 @@ import type { FetchFunc } from './types';
 // <<		''			Z			Z
 // >>		''						C
 
+// todo: back, backbegin, nenextend
 export const createPagination = <Type>(fn: FetchFunc<Type>, init?: { pageSize: number }) => {
 	//#region stores
 	const rows = writable<Array<Type>>([]);
@@ -21,7 +22,7 @@ export const createPagination = <Type>(fn: FetchFunc<Type>, init?: { pageSize: n
 
 	//#endregion
 
-	//#region subs
+	//#region subs/derived
 	const lastCursor = derived(
 		tokens,
 		(values) => (!values.length ? '' : values[values.length - 1]),
@@ -45,6 +46,8 @@ export const createPagination = <Type>(fn: FetchFunc<Type>, init?: { pageSize: n
 			_canFetch.set(true); // reset the cursor to blank again;
 		}
 	});
+
+	const canNext = derived([endCursor, currentCursor], ([e, c]) => c != e || e.length == 0);
 	//#endregion
 
 	//#region methods
@@ -72,6 +75,7 @@ export const createPagination = <Type>(fn: FetchFunc<Type>, init?: { pageSize: n
 	return {
 		pageSize,
 		rows,
+		canNext,
 		cursors: {
 			begin: beginCursor,
 			end: endCursor,

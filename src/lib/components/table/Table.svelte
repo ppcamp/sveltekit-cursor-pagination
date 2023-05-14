@@ -16,10 +16,7 @@
 	export let fetcher: FetchFunc<TData>;
 
 	const pagination = createPagination(fetcher);
-	const {
-		rows,
-		cursors: { current: currentCursor, end: endCursor }
-	} = pagination;
+	const { rows, canNext } = pagination;
 
 	$: hasActions = $$slots.actions;
 </script>
@@ -58,11 +55,7 @@
 
 		<Spacer />
 
-		<Pagination
-			rowsCount={$rows.length}
-			on:next={pagination.next}
-			disableNext={$currentCursor == $endCursor && $endCursor != ''}
-		/>
+		<Pagination rowsCount={$rows.length} on:next={pagination.next} disableNext={!$canNext} />
 	</div>
 </BeforeMount>
 
