@@ -1,5 +1,6 @@
-import { derived, get, writable, type Readable, readable } from 'svelte/store';
+import { derived, get, writable, type Readable, readable, type Writable } from 'svelte/store';
 import type { FetchFunc } from './types';
+import { persisted } from 'svelte-local-storage-store';
 
 interface Paginated<T> {
 	pageSize: Readable<number>;
@@ -25,7 +26,16 @@ interface Paginated<T> {
 	};
 }
 
-type InitPageSize = { pageSize: number };
+type PageSizePersisted = {
+	key: string;
+	location: 'local' | 'session';
+};
+
+type InitPageSize = {
+	pageSize: number;
+	/** if pass this key, the value will be stored in localStorage */
+	pageSizePersisted?: PageSizePersisted;
+};
 type InitAll<Type> = InitPageSize & {
 	rows: Array<Type>;
 	tokens: Array<Type>;
@@ -54,7 +64,8 @@ export function createPagination<Type>(
 		nextCursor: '',
 		pageSize: 10,
 		rows: [],
-		tokens: []
+		tokens: [],
+		pageSizePersisted: undefined
 	} satisfies InitAll<Type>;
 
 	if (init) {
@@ -63,8 +74,16 @@ export function createPagination<Type>(
 	}
 
 	//#region stores
+	let pageSize: Writable<number>;
+	if (_init.pageSizePersisted) {
+		pageSize = persisted<number>(
+			(_init.pageSizePersisted as PageSizePersisted).key,
+			_init.pageSize,
+			{ storage: (_init.pageSizePersisted as PageSizePersisted).location }
+		);
+	} else pageSize = writable<number>(_init.pageSize);
+
 	const rows = writable<Array<Type>>(_init.rows);
-	const pageSize = writable<number>(_init.pageSize);
 
 	const tokens = writable<string[]>(_init.tokens);
 	const currentCursor = writable<string>(_init.currentCursor);
