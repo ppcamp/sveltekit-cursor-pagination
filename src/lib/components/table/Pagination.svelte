@@ -8,8 +8,6 @@
 	export let disableBack: boolean = false;
 	export let disableFirst: boolean = false;
 
-	export let enable: boolean = true;
-
 	const dispatch = createEventDispatcher<{ next: any; back: any; first: any; last: any }>();
 </script>
 

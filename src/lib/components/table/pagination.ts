@@ -25,6 +25,15 @@ interface Paginated<T> {
 	};
 }
 
+type InitPageSize = { pageSize: number };
+type InitAll<Type> = InitPageSize & {
+	rows: Array<Type>;
+	tokens: Array<Type>;
+	currentCursor: string;
+	nextCursor: string;
+	canFetch: boolean;
+};
+
 /**
  * Method used to create a pagination object
  *
@@ -33,22 +42,34 @@ interface Paginated<T> {
  * @returns pagination elements with all cursor logic embed
  */
 export function createPagination<Type>(fn: FetchFunc<Type>): Paginated<Type>;
+export function createPagination<Type>(fn: FetchFunc<Type>, init: InitAll<Type>): Paginated<Type>;
+export function createPagination<Type>(fn: FetchFunc<Type>, init: InitPageSize): Paginated<Type>;
 export function createPagination<Type>(
 	fn: FetchFunc<Type>,
-	init: { pageSize: number }
-): Paginated<Type>;
-export function createPagination<Type>(
-	fn: FetchFunc<Type>,
-	init?: { pageSize: number }
+	init?: InitAll<Type> | InitPageSize
 ): Paginated<Type> {
-	//#region stores
-	const rows = writable<Array<Type>>([]);
-	const pageSize = writable<number>(init?.pageSize ?? 10);
+	let _init = {
+		canFetch: true,
+		currentCursor: '',
+		nextCursor: '',
+		pageSize: 10,
+		rows: [],
+		tokens: []
+	} satisfies InitAll<Type>;
 
-	const tokens = writable<string[]>(['']);
-	const currentCursor = writable<string>('');
-	const _canFetch = writable<boolean>(true);
-	const nextCursor = writable<string>('');
+	if (init) {
+		// @ts-ignore: initpagesize shares the same variable with initall
+		_init = { ..._init, ...init };
+	}
+
+	//#region stores
+	const rows = writable<Array<Type>>(_init.rows);
+	const pageSize = writable<number>(_init.pageSize);
+
+	const tokens = writable<string[]>(_init.tokens);
+	const currentCursor = writable<string>(_init.currentCursor);
+	const _canFetch = writable<boolean>(_init.canFetch);
+	const nextCursor = writable<string>(_init.nextCursor);
 
 	//#endregion
 

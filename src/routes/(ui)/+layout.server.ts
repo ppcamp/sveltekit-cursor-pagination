@@ -11,7 +11,5 @@ const links = readdirSync(dir, { withFileTypes: true })
 	.map((v) => v.name);
 
 export const load: LayoutServerLoad = async (event) => {
-	return {
-		dirs: links
-	};
+	return { dirs: links };
 };
