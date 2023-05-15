@@ -1,35 +1,37 @@
 import { derived, get, writable, type Readable, readable } from 'svelte/store';
 import type { FetchFunc } from './types';
 
-// curr	''	Z		C			EOL
-// next	Z		C		EOL		''
-// data	!		!		!			NULL
-// stack		[]	[Z]	[Z,C]	[Z,C]
-// prev	''	''	Z			C
-// <<		''			Z			Z
-// >>		''						C
-
 interface Paginated<T> {
 	pageSize: Readable<number>;
 	rows: Readable<Array<T>>;
-	canNext: Readable<boolean>;
-	canBack: Readable<boolean>;
-	canFirst: Readable<boolean>;
-	canLast: Readable<boolean>;
+	fetchers: {
+		next: () => Promise<void>;
+		back: () => Promise<void>;
+		first: () => Promise<void>;
+		last: () => Promise<void>;
+		fetch: () => Promise<void>;
+	};
+	can: {
+		next: Readable<boolean>;
+		back: Readable<boolean>;
+		first: Readable<boolean>;
+		last: Readable<boolean>;
+	};
 	cursors: {
 		begin: Readable<string>;
 		end: Readable<string>;
 		current: Readable<string>;
 		next: Readable<string>;
 	};
-	next: () => Promise<void>;
-	back: () => Promise<void>;
-	first: () => Promise<void>;
-	last: () => Promise<void>;
-	fetch: () => Promise<void>;
 }
 
-// todo: back, backbegin, nenextend
+/**
+ * Method used to create a pagination object
+ *
+ * @param fn Function used to fetch elements
+ * @param init Base value
+ * @returns pagination elements with all cursor logic embed
+ */
 export const createPagination = <Type>(
 	fn: FetchFunc<Type>,
 	init?: { pageSize: number }
@@ -38,7 +40,6 @@ export const createPagination = <Type>(
 	const rows = writable<Array<Type>>([]);
 	const pageSize = writable<number>(init?.pageSize ?? 10);
 
-	const total = writable<number>(-1);
 	const tokens = writable<string[]>(['']);
 	const currentCursor = writable<string>('');
 	const _canFetch = writable<boolean>(true);
@@ -69,8 +70,6 @@ export const createPagination = <Type>(
 			_canFetch.set(true); // reset the cursor to blank again;
 		}
 	});
-
-	currentCursor.subscribe((v) => total.update((v) => v + get(pageSize)));
 
 	//#endregion
 
@@ -122,24 +121,27 @@ export const createPagination = <Type>(
 	};
 	//#endregion
 
-	tokens.subscribe(console.info);
 	return {
 		pageSize,
 		rows,
-		canNext,
-		canBack,
-		canFirst: canBack,
-		canLast,
+		can: {
+			next: canNext,
+			back: canBack,
+			first: canBack,
+			last: canLast
+		},
 		cursors: {
 			begin: beginCursor,
 			end: endCursor,
 			current: currentCursor,
 			next: nextCursor
 		},
-		next,
-		back,
-		first,
-		last,
-		fetch
+		fetchers: {
+			next,
+			back,
+			first,
+			last,
+			fetch
+		}
 	};
 };
