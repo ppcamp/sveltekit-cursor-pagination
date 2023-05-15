@@ -1,4 +1,4 @@
-import { derived, get, writable } from 'svelte/store';
+import { derived, get, writable, type Readable, readable } from 'svelte/store';
 import type { FetchFunc } from './types';
 
 // curr	''	Z		C			EOL
@@ -9,12 +9,36 @@ import type { FetchFunc } from './types';
 // <<		''			Z			Z
 // >>		''						C
 
+interface Paginated<T> {
+	pageSize: Readable<number>;
+	rows: Readable<Array<T>>;
+	canNext: Readable<boolean>;
+	canBack: Readable<boolean>;
+	canFirst: Readable<boolean>;
+	canLast: Readable<boolean>;
+	cursors: {
+		begin: Readable<string>;
+		end: Readable<string>;
+		current: Readable<string>;
+		next: Readable<string>;
+	};
+	next: () => Promise<void>;
+	back: () => Promise<void>;
+	first: () => Promise<void>;
+	last: () => Promise<void>;
+	fetch: () => Promise<void>;
+}
+
 // todo: back, backbegin, nenextend
-export const createPagination = <Type>(fn: FetchFunc<Type>, init?: { pageSize: number }) => {
+export const createPagination = <Type>(
+	fn: FetchFunc<Type>,
+	init?: { pageSize: number }
+): Paginated<Type> => {
 	//#region stores
 	const rows = writable<Array<Type>>([]);
 	const pageSize = writable<number>(init?.pageSize ?? 10);
 
+	const total = writable<number>(-1);
 	const tokens = writable<string[]>(['']);
 	const currentCursor = writable<string>('');
 	const _canFetch = writable<boolean>(true);
@@ -23,20 +47,15 @@ export const createPagination = <Type>(fn: FetchFunc<Type>, init?: { pageSize: n
 	//#endregion
 
 	//#region subs/derived
-	const lastCursor = derived(
-		tokens,
-		(values) => (!values.length ? '' : values[values.length - 1]),
-		''
-	);
 	const endCursor = derived(
 		[tokens, _canFetch],
 		([values, can]) => (!values.length || can ? '' : values[values.length - 1]),
 		''
 	);
 
-	const beginCursor = ''; // the first will always be a blank
+	const beginCursor = readable(''); // the first will always be a blank
 	const canNext = derived([endCursor, currentCursor], ([e, c]) => c != e || !e.length);
-	const canBack = derived(currentCursor, (c) => c != beginCursor);
+	const canBack = derived(currentCursor, (c) => c != get(beginCursor));
 	const canLast = derived([endCursor, currentCursor], ([e, c]) => e != '' && c != e);
 
 	// whenever pageSize changes, we need to drop old (future) tokens
@@ -50,6 +69,8 @@ export const createPagination = <Type>(fn: FetchFunc<Type>, init?: { pageSize: n
 			_canFetch.set(true); // reset the cursor to blank again;
 		}
 	});
+
+	currentCursor.subscribe((v) => total.update((v) => v + get(pageSize)));
 
 	//#endregion
 
