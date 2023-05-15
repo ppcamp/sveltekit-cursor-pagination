@@ -4,7 +4,7 @@
 
 	export let icon: IconName;
 	export let variant: Variant = 'default';
-	export let transparent: boolean = false;
+	export let transparent: boolean = true;
 	export let swap: boolean = false;
 
 	let klass: string = '';
