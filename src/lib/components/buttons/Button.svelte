@@ -10,6 +10,7 @@
 	type="button"
 	class:btn={variant == 'default'}
 	class:variant-filled={variant == 'default'}
+	{...$$restProps}
 	on:click
 >
 	<div class={cssMap('flex', klass)}>

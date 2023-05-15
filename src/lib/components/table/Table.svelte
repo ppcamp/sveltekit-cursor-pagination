@@ -16,13 +16,13 @@
 	export let fetcher: FetchFunc<TData>;
 
 	const pagination = createPagination(fetcher);
-	const { rows, canNext } = pagination;
+	const { rows, canNext, canBack, canFirst, canLast } = pagination;
 
 	$: hasActions = $$slots.actions;
 </script>
 
 <BeforeMount promise={pagination.fetch()}>
-	<div class={cssMap('m-5', klass)}>
+	<div class={cssMap('w-modal-wide', klass)}>
 		<table class="inline-block table">
 			<thead class="text-left">
 				{#each columns as c}
@@ -55,7 +55,17 @@
 
 		<Spacer />
 
-		<Pagination rowsCount={$rows.length} on:next={pagination.next} disableNext={!$canNext} />
+		<Pagination
+			rowsCount={$rows.length}
+			disableNext={!$canNext}
+			on:next={pagination.next}
+			disableBack={!$canBack}
+			on:back={pagination.back}
+			disableFirst={!$canFirst}
+			on:first={pagination.first}
+			disableLast={!$canLast}
+			on:last={pagination.last}
+		/>
 	</div>
 </BeforeMount>
 

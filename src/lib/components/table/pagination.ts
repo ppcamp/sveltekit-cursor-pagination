@@ -33,7 +33,11 @@ export const createPagination = <Type>(fn: FetchFunc<Type>, init?: { pageSize: n
 		([values, can]) => (!values.length || can ? '' : values[values.length - 1]),
 		''
 	);
-	const beginCursor = derived(tokens, (values) => (!values.length ? '' : values[0]), '');
+
+	const beginCursor = ''; // the first will always be a blank
+	const canNext = derived([endCursor, currentCursor], ([e, c]) => c != e || !e.length);
+	const canBack = derived(currentCursor, (c) => c != beginCursor);
+	const canLast = derived([endCursor, currentCursor], ([e, c]) => e != '' && c != e);
 
 	// whenever pageSize changes, we need to drop old (future) tokens
 	// example, imagine that we have 7 pages, we already fetch them all and have all tokens,
@@ -47,7 +51,6 @@ export const createPagination = <Type>(fn: FetchFunc<Type>, init?: { pageSize: n
 		}
 	});
 
-	const canNext = derived([endCursor, currentCursor], ([e, c]) => c != e || e.length == 0);
 	//#endregion
 
 	//#region methods
@@ -55,6 +58,12 @@ export const createPagination = <Type>(fn: FetchFunc<Type>, init?: { pageSize: n
 		// prefetch to see if there's more
 		const resp = await fn({ pageSize: get(pageSize), pageToken: get(nextCursor) });
 		if (!resp.data.length) _canFetch.set(false); // reached the end of cursor
+	};
+
+	const _cursorAt = () => {
+		const t = get(tokens);
+		const f = t.findIndex((v) => v == get(currentCursor));
+		return f;
 	};
 
 	const fetch = async () => {
@@ -67,15 +76,39 @@ export const createPagination = <Type>(fn: FetchFunc<Type>, init?: { pageSize: n
 
 	const next = async () => {
 		currentCursor.set(get(nextCursor));
-		tokens.update((v) => [...v, get(currentCursor)]);
+		const cursorAt = _cursorAt();
+		if (cursorAt == -1) tokens.update((v) => [...v, get(currentCursor)]);
+		await fetch();
+	};
+
+	const back = async () => {
+		const at = _cursorAt();
+		if (at >= 0) {
+			if (at == 0) currentCursor.set('');
+			else currentCursor.set(get(tokens)[at - 1]);
+		}
+		await fetch();
+	};
+
+	const first = async () => {
+		currentCursor.set('');
+		await fetch();
+	};
+
+	const last = async () => {
+		if (get(canLast)) currentCursor.set(get(endCursor));
 		await fetch();
 	};
 	//#endregion
 
+	tokens.subscribe(console.info);
 	return {
 		pageSize,
 		rows,
 		canNext,
+		canBack,
+		canFirst: canBack,
+		canLast,
 		cursors: {
 			begin: beginCursor,
 			end: endCursor,
@@ -83,6 +116,9 @@ export const createPagination = <Type>(fn: FetchFunc<Type>, init?: { pageSize: n
 			next: nextCursor
 		},
 		next,
+		back,
+		first,
+		last,
 		fetch
 	};
 };

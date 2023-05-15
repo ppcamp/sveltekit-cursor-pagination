@@ -4,6 +4,8 @@
 
 	export let icon: IconName;
 	export let variant: Variant = 'default';
+	export let transparent: boolean = false;
+	export let swap: boolean = false;
 
 	let klass: string = '';
 	export { klass as class };
@@ -11,9 +13,12 @@
 	$: hasSlot = $$slots.default;
 </script>
 
-<Button variant={hasSlot ? 'default' : 'transparent'} class={klass} on:click>
-	<span class="mr-3"><Icon {icon} {variant} /></span>
-	{#if hasSlot}
-		<span><slot /></span>
+<Button {...$$restProps} variant={!transparent ? 'default' : 'transparent'} class={klass} on:click>
+	{#if swap}
+		{#if hasSlot}<span><slot /></span>{/if}
+		<span class="mr-3"><Icon {icon} {variant} /></span>
+	{:else}
+		<span class="mr-3"><Icon {icon} {variant} /></span>
+		{#if hasSlot}<span><slot /></span>{/if}
 	{/if}
 </Button>

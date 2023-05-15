@@ -1,5 +1,17 @@
 <script lang="ts" context="module">
-	const available = ['delete', 'home', 'arrow_forward', 'settings_ethernet'] as const;
+	const available = [
+		'delete',
+		'home',
+		'arrow_back',
+		'arrow_forward',
+		'settings_ethernet',
+		'keyboard_double_arrow_right',
+		'keyboard_double_arrow_left',
+		'first_page',
+		'last_page',
+		'navigate_next',
+		'navigate_before'
+	] as const;
 
 	export type IconName = (typeof available)[number];
 	export type Variant = 'default' | 'symbols-outlined';
