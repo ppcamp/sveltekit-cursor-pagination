@@ -32,10 +32,15 @@ interface Paginated<T> {
  * @param init Base value
  * @returns pagination elements with all cursor logic embed
  */
-export const createPagination = <Type>(
+export function createPagination<Type>(fn: FetchFunc<Type>): Paginated<Type>;
+export function createPagination<Type>(
+	fn: FetchFunc<Type>,
+	init: { pageSize: number }
+): Paginated<Type>;
+export function createPagination<Type>(
 	fn: FetchFunc<Type>,
 	init?: { pageSize: number }
-): Paginated<Type> => {
+): Paginated<Type> {
 	//#region stores
 	const rows = writable<Array<Type>>([]);
 	const pageSize = writable<number>(init?.pageSize ?? 10);
@@ -144,4 +149,4 @@ export const createPagination = <Type>(
 			fetch
 		}
 	};
-};
+}

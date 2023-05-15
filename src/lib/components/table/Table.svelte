@@ -14,13 +14,13 @@
 	export let columns: Column<TData>[];
 	export let fetcher: FetchFunc<TData>;
 
+	$: hasActions = $$slots.actions;
+
 	const {
 		rows,
 		can: { back, first, last, next },
 		fetchers
 	} = createPagination(fetcher);
-
-	$: hasActions = $$slots.actions;
 
 	onMount(async () => {
 		await fetchers.fetch();

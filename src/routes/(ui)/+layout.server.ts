@@ -1,6 +1,6 @@
 import { readdirSync } from 'fs';
 import { dirname } from 'path';
-import type { PageLoad } from './$types';
+import type { LayoutServerLoad } from './$types';
 import { fileURLToPath } from 'url';
 
 export const ssr = true;
@@ -10,7 +10,7 @@ const links = readdirSync(dir, { withFileTypes: true })
 	.filter((fd) => fd.isDirectory())
 	.map((v) => v.name);
 
-export const load: PageLoad = async () => {
+export const load: LayoutServerLoad = async (event) => {
 	return {
 		dirs: links
 	};

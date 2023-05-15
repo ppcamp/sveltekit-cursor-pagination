@@ -1,6 +1,3 @@
-<script lang="ts" context="module">
-</script>
-
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import IconButton from '../buttons/IconButton.svelte';
