@@ -1,6 +1,5 @@
 import { handle } from '$server/handler';
 import type { GotApiItem, GotApiItemList } from '$types/list';
-import crypto from 'crypto';
 
 // SEE https://github.com/public-apis/public-apis
 const GOT_API = 'https://api.gameofthronesquotes.xyz/v1/characters';
@@ -14,18 +13,21 @@ export const GET = handle(async (event) => {
 	return data satisfies GotApiItemList;
 });
 
-const encrypt = (v: string) => crypto.createHash('md5').update(v).digest('hex');
+const encode = (v: string) => Buffer.from(v, 'utf8').toString('base64');
+const decode = (v: string) => Buffer.from(v, 'base64').toString('utf8');
 
 const simulateSQLapi = async (fetch: Function, pageToken: string, pageSize: number) => {
 	const res = await fetch(GOT_API);
 	const data = (await res.json()) as GotApiItem[];
 
+	const decodedPageToken = decode(pageToken);
+
 	let pageTokenNumber = -1;
 	let reachEndCursor = false;
-	pageTokenNumber = data.findIndex((v) => encrypt(v.slug) == pageToken);
+	pageTokenNumber = data.findIndex((v) => v.slug == decodedPageToken);
 
 	if (pageTokenNumber == -1) {
-		if (pageToken != '') {
+		if (decodedPageToken != '') {
 			return { data: [], nextPageToken: '' };
 		}
 		pageTokenNumber = 0;
@@ -41,5 +43,5 @@ const simulateSQLapi = async (fetch: Function, pageToken: string, pageSize: numb
 	// pass a cursor to a pagination that doesn't exist, telling that you finish the pagination
 	const nextPageToken = !reachEndCursor ? data[toPageSize].slug : 'EOC';
 
-	return { data: slice, nextPageToken: encrypt(nextPageToken) };
+	return { data: slice, nextPageToken: encode(nextPageToken) };
 };
