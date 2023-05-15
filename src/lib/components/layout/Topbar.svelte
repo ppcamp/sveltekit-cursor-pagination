@@ -6,7 +6,7 @@
 
 <AppBar>
 	<svelte:fragment slot="lead">
-		<IconButton icon="home" on:click={() => goto('/')} />
+		<IconButton transparent icon="home" on:click={() => goto('/')} />
 	</svelte:fragment>
 	<svelte:fragment slot="trail">
 		<LightSwitch />
