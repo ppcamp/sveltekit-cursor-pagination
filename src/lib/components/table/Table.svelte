@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, setContext } from 'svelte';
 	import { createPagination } from './pagination';
-	import Pagination from './Pagination.svelte';
+	import Pagination, { type Context, Key } from './Pagination.svelte';
 	import { cssMap } from '$lib/utils/dom';
 	import type { Column, FetchFunc } from './types';
 	import { capitalize } from '$lib/utils/strings';
@@ -16,11 +16,11 @@
 
 	$: hasActions = $$slots.actions;
 
-	const {
-		rows,
-		can: { back, first, last, next },
-		fetchers
-	} = createPagination(fetcher);
+	const pagination = createPagination(fetcher, {
+		pageSizePersisted: { key: 'table', location: 'local' }
+	});
+	const { fetchers, rows } = pagination;
+	setContext<Context<TData>>(Key, { pagination });
 
 	onMount(async () => {
 		await fetchers.fetch();
@@ -60,17 +60,7 @@
 
 	<Spacer />
 
-	<Pagination
-		rowsCount={$rows.length}
-		disableNext={!$next}
-		on:next={fetchers.next}
-		disableBack={!$back}
-		on:back={fetchers.back}
-		disableFirst={!$first}
-		on:first={fetchers.first}
-		disableLast={!$last}
-		on:last={fetchers.last}
-	/>
+	<Pagination />
 </div>
 
 <style lang="scss">

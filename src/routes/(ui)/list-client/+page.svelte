@@ -3,54 +3,26 @@
 	import Table from '$components/table/Table.svelte';
 	import type { Column, FetchFunc } from '$components/table/types';
 	import { toastStore } from '@skeletonlabs/skeleton';
-	import type { PageLoad } from './$types';
 	import { isOk } from '$fetchers/internal/status';
 	import type { GotApiItem, GotApiItemList } from '$types/list';
 	import { capitalize } from '$lib/utils/strings';
 	import fetcher from '$fetchers/list';
 	import { browser } from '$app/environment';
 
-	export let data: PageLoad;
+	type TData = GotApiItem;
 
-	$: isErr = !isOk(data);
-	$: rows = isErr ? [] : (data.data as GotApiItemList[]);
-
-	type TData = (typeof rows)[number];
-	const columns: Column<GotApiItem>[] = [
-		{
-			name: 'Slug',
-			row: (v) => {
-				return `${capitalize(v.slug)}`;
-			}
-		},
-		{
-			name: 'Name',
-			row: (v) => {
-				return `${v.name}`;
-			}
-		},
-		{
-			name: 'House',
-			row: (v) => {
-				return `${capitalize(v.house?.slug || 'N/A')}`;
-			}
-		},
-		{
-			name: 'Quotes',
-			row: (v) => {
-				return `${JSON.stringify(v.quotes)}`;
-			}
-		}
+	const columns: Column<TData>[] = [
+		{ name: 'Slug', row: (v) => `${capitalize(v.slug)}` },
+		{ name: 'Name', row: (v) => `${v.name}` },
+		{ name: 'House', row: (v) => `${capitalize(v.house?.slug || 'N/A')}` },
+		{ name: 'Quotes', row: (v) => `${JSON.stringify(v.quotes)}` }
 	];
 
 	const show = (v: TData) => {
-		toastStore.trigger({
-			message: 'Called DELETE ' + v.name,
-			autohide: true
-		});
+		toastStore.trigger({ message: 'Called DELETE ' + v.name, autohide: true });
 	};
 
-	const doFetch: FetchFunc<GotApiItemList> = async (input, event) => {
+	const doFetch: FetchFunc<TData> = async (input, event) => {
 		const resp = await fetcher.list(input, event);
 		if (isOk(resp)) {
 			return resp;

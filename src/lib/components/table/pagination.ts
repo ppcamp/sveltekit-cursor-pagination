@@ -2,8 +2,8 @@ import { derived, get, writable, type Readable, readable, type Writable } from '
 import type { FetchFunc } from './types';
 import { persisted } from 'svelte-local-storage-store';
 
-interface Paginated<T> {
-	pageSize: Readable<number>;
+export interface Paginated<T> {
+	pageSize: Writable<number>;
 	rows: Readable<Array<T>>;
 	fetchers: {
 		next: () => Promise<void>;
@@ -32,16 +32,16 @@ type PageSizePersisted = {
 };
 
 type InitPageSize = {
-	pageSize: number;
+	pageSize?: number;
 	/** if pass this key, the value will be stored in localStorage */
 	pageSizePersisted?: PageSizePersisted;
 };
 type InitAll<Type> = InitPageSize & {
-	rows: Array<Type>;
-	tokens: Array<Type>;
-	currentCursor: string;
-	nextCursor: string;
-	canFetch: boolean;
+	rows?: Array<Type>;
+	tokens?: Array<Type>;
+	currentCursor?: string;
+	nextCursor?: string;
+	canFetch?: boolean;
 };
 
 /**
@@ -58,6 +58,7 @@ export function createPagination<Type>(
 	fn: FetchFunc<Type>,
 	init?: InitAll<Type> | InitPageSize
 ): Paginated<Type> {
+	//#region init data
 	let _init = {
 		canFetch: true,
 		currentCursor: '',
@@ -72,6 +73,7 @@ export function createPagination<Type>(
 		// @ts-ignore: initpagesize shares the same variable with initall
 		_init = { ..._init, ...init };
 	}
+	//#endregion
 
 	//#region stores
 	let pageSize: Writable<number>;
@@ -89,10 +91,9 @@ export function createPagination<Type>(
 	const currentCursor = writable<string>(_init.currentCursor);
 	const _canFetch = writable<boolean>(_init.canFetch);
 	const nextCursor = writable<string>(_init.nextCursor);
-
 	//#endregion
 
-	//#region subs/derived
+	//#region derived
 	const endCursor = derived(
 		[tokens, _canFetch],
 		([values, can]) => (!values.length || can ? '' : values[values.length - 1]),
@@ -103,19 +104,6 @@ export function createPagination<Type>(
 	const canNext = derived([endCursor, currentCursor], ([e, c]) => c != e || !e.length);
 	const canBack = derived(currentCursor, (c) => c != get(beginCursor));
 	const canLast = derived([endCursor, currentCursor], ([e, c]) => e != '' && c != e);
-
-	// whenever pageSize changes, we need to drop old (future) tokens
-	// example, imagine that we have 7 pages, we already fetch them all and have all tokens,
-	// but we are currently in 5th page, and we change the pageSize. Thus, all tokens from that point to further aren't valid
-	// cause they won't reflect the data correctly
-	pageSize.subscribe((v) => {
-		const f = get(tokens).findIndex((v) => v == get(currentCursor));
-		if (f >= 0) {
-			tokens.update((v) => v.slice(0, f)); // drop old tokens, since they aren't valid due to pagination changes
-			_canFetch.set(true); // reset the cursor to blank again;
-		}
-	});
-
 	//#endregion
 
 	//#region methods
@@ -164,6 +152,22 @@ export function createPagination<Type>(
 		if (get(canLast)) currentCursor.set(get(endCursor));
 		await fetch();
 	};
+	//#endregion
+
+	//#region subscriptions
+	// whenever pageSize changes, we need to drop old (future) tokens
+	// example, imagine that we have 7 pages, we already fetch them all and have all tokens,
+	// but we are currently in 5th page, and we change the pageSize. Thus, all tokens from that point to further aren't valid
+	// cause they won't reflect the data correctly
+	pageSize.subscribe(async (v) => {
+		const f = get(tokens).findIndex((v) => v == get(currentCursor));
+		if (f >= 0) {
+			tokens.update((v) => v.slice(0, f)); // drop old tokens, since they aren't valid due to pagination changes
+			_canFetch.set(true); // reset the cursor to blank again;
+		}
+		await fetch();
+	});
+
 	//#endregion
 
 	return {
