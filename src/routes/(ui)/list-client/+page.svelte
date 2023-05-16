@@ -4,7 +4,7 @@
 	import type { Column, FetchFunc } from '$components/table/types';
 	import { toastStore } from '@skeletonlabs/skeleton';
 	import { isOk } from '$fetchers/internal/status';
-	import type { GotApiItem, GotApiItemList } from '$types/list';
+	import type { GotApiItem } from '$types/list';
 	import { capitalize } from '$lib/utils/strings';
 	import fetcher from '$fetchers/list';
 	import { browser } from '$app/environment';
