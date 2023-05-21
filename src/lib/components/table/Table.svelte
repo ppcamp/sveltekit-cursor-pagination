@@ -13,6 +13,7 @@
 	export { klass as class };
 	export let columns: Column<TData>[];
 	export let fetcher: FetchFunc<TData>;
+	export let enableRows: boolean = false;
 
 	$: hasActions = $$slots.actions;
 
@@ -30,6 +31,10 @@
 <div class={cssMap('w-modal-wide', klass)}>
 	<table class="inline-block table">
 		<thead class="text-left">
+			{#if enableRows}
+				<th class="table-cell">#</th>
+			{/if}
+
 			{#each columns as c}
 				<th class="table-cell">{capitalize(c.name)}</th>
 			{/each}
@@ -43,6 +48,10 @@
 			<!-- {#key $currentCursor} -->
 			{#each $rows as row, index}
 				<tr class="table-row">
+					{#if enableRows}
+						<th class="table-cell p-5">{index + 1}</th>
+					{/if}
+
 					{#each columns as c}
 						<td class="table-cell max-w-[50rem] overflow-hidden text-ellipsis">{c.row(row)}</td>
 					{/each}
