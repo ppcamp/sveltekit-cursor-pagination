@@ -1,31 +1,25 @@
-<script lang="ts" context="module">
-	export const Key = Symbol();
-	export type Context<T> = { pagination: Paginated<T> };
-</script>
-
 <script lang="ts">
-	import { getContext } from 'svelte';
+	import type { PaginatedFetchFunc } from './types';
 	import IconButton from '../buttons/IconButton.svelte';
-	import type { Paginated } from './pagination';
+	import { createPagination } from './pagination';
+	import { onMount } from 'svelte';
 
 	export let pageSizes: number[] = [5, 10, 25, 50];
+	export let fn: PaginatedFetchFunc;
+	export let rowsCount: number = -1;
 
-	type T = $$Generic;
-
-	const { pagination } = getContext<Context<T>>(Key);
 	const {
-		can: { back, next, first, last },
+		can: { back, first, last, next },
 		fetchers,
-		rows,
 		pageSize
-	} = pagination;
+	} = createPagination(fn);
 
-	$: rowsCount = $rows.length;
+	onMount(fetchers.fetch);
 </script>
 
 <nav class="flex w-full rounded bg-surface-800 p-5 align-middle">
 	<div class="w-full">
-		{#if rowsCount}
+		{#if rowsCount >= 0}
 			<div class="flex align-middle">
 				<b>Total</b>
 				<span class="badge variant-soft-primary ml-5"> {rowsCount} Elements </span>

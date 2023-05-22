@@ -1,31 +1,48 @@
 <script lang="ts">
-	import { onMount, setContext } from 'svelte';
-	import { createPagination } from './pagination';
-	import Pagination, { type Context, Key } from './Pagination.svelte';
+	import type { ServerEvent } from '$types/utils';
+	import type { ListProperties } from '$types/pagination';
+	import type { ListResponse } from '$types/list';
+	import { toastStore } from '@skeletonlabs/skeleton';
+	import { browser } from '$app/environment';
+	import { isOk, type ClientResponse } from '$lib/fetchers/internal/status';
+	import Pagination from './Pagination.svelte';
 	import { cssMap } from '$lib/utils/dom';
-	import type { Column, FetchFunc } from './types';
+	import type { Column, PaginatedFetchFunc } from './types';
 	import { capitalize } from '$lib/utils/strings';
 	import Spacer from '$components/Spacer.svelte';
 
-	type TData = $$Generic;
+	type TFnResponse = $$Generic;
+	type TRows = $$Generic<Array<unknown>>;
 
-	let klass: string = '';
-	export { klass as class };
-	export let columns: Column<TData>[];
-	export let fetcher: FetchFunc<TData>;
+	export let fn: (
+		input: ListProperties,
+		event?: ServerEvent
+	) => Promise<ClientResponse<ListResponse<TFnResponse>>>;
+	export let mapper: (v: TFnResponse) => TRows;
+	export let columns: Column<TRows[number]>[];
 	export let enableRows: boolean = false;
+	export { klass as class };
 
+	/** @ts-ignore: TRows is an array */
+	let rows: TRows = [];
+	let klass: string = '';
 	$: hasActions = $$slots.actions;
 
-	const pagination = createPagination(fetcher, {
-		pageSizePersisted: { key: 'table', location: 'local' }
-	});
-	const { fetchers, rows } = pagination;
-	setContext<Context<TData>>(Key, { pagination });
-
-	onMount(async () => {
-		await fetchers.fetch();
-	});
+	const fetchAndUpdate: PaginatedFetchFunc = async (input, event) => {
+		const resp = await fn(input, event);
+		if (isOk(resp)) {
+			if (!input.isPreload) rows = mapper(resp);
+			return resp.nextPageToken;
+		}
+		if (browser) {
+			toastStore.trigger({
+				message: 'Fail to fetch elements',
+				autohide: true,
+				background: 'variant-filled-warning'
+			});
+		}
+		throw 'err';
+	};
 </script>
 
 <div class={cssMap('w-modal-wide', klass)}>
@@ -45,8 +62,7 @@
 		</thead>
 
 		<tbody class="text-left">
-			<!-- {#key $currentCursor} -->
-			{#each $rows as row, index}
+			{#each rows as row, index}
 				<tr class="table-row">
 					{#if enableRows}
 						<th class="table-cell p-5">{index + 1}</th>
@@ -63,13 +79,12 @@
 					{/if}
 				</tr>
 			{/each}
-			<!-- {/key} -->
 		</tbody>
 	</table>
 
 	<Spacer />
 
-	<Pagination />
+	<Pagination fn={fetchAndUpdate} />
 </div>
 
 <style lang="scss">

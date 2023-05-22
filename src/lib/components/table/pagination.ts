@@ -1,10 +1,9 @@
 import { derived, get, writable, type Readable, readable, type Writable } from 'svelte/store';
-import type { FetchFunc } from './types';
-import { persisted } from 'svelte-local-storage-store';
+import type { PaginatedFetchFunc } from './types';
+import { browser } from '$app/environment';
 
-export interface Paginated<T> {
+export interface Paginated {
 	pageSize: Writable<number>;
-	rows: Readable<Array<T>>;
 	fetchers: {
 		next: () => Promise<void>;
 		back: () => Promise<void>;
@@ -26,19 +25,12 @@ export interface Paginated<T> {
 	};
 }
 
-type PageSizePersisted = {
-	key: string;
-	location: 'local' | 'session';
-};
-
 type InitPageSize = {
 	pageSize?: number;
-	/** if pass this key, the value will be stored in localStorage */
-	pageSizePersisted?: PageSizePersisted;
 };
-type InitAll<Type> = InitPageSize & {
-	rows?: Array<Type>;
-	tokens?: Array<Type>;
+
+type InitAll = InitPageSize & {
+	tokens?: Array<string>;
 	currentCursor?: string;
 	nextCursor?: string;
 	canFetch?: boolean;
@@ -51,23 +43,18 @@ type InitAll<Type> = InitPageSize & {
  * @param init Base value
  * @returns pagination elements with all cursor logic embed
  */
-export function createPagination<Type>(fn: FetchFunc<Type>): Paginated<Type>;
-export function createPagination<Type>(fn: FetchFunc<Type>, init: InitAll<Type>): Paginated<Type>;
-export function createPagination<Type>(fn: FetchFunc<Type>, init: InitPageSize): Paginated<Type>;
-export function createPagination<Type>(
-	fn: FetchFunc<Type>,
-	init?: InitAll<Type> | InitPageSize
-): Paginated<Type> {
+export function createPagination(fn: PaginatedFetchFunc): Paginated;
+export function createPagination(fn: PaginatedFetchFunc, init: InitAll): Paginated;
+export function createPagination(fn: PaginatedFetchFunc, init: InitPageSize): Paginated;
+export function createPagination(fn: PaginatedFetchFunc, init?: InitAll | InitPageSize): Paginated {
 	//#region init data
 	let _init = {
 		canFetch: true,
 		currentCursor: '',
 		nextCursor: '',
 		pageSize: 10,
-		rows: [],
-		tokens: [],
-		pageSizePersisted: undefined
-	} satisfies InitAll<Type>;
+		tokens: []
+	} satisfies InitAll;
 
 	if (init) {
 		// @ts-ignore: initpagesize shares the same variable with initall
@@ -76,17 +63,7 @@ export function createPagination<Type>(
 	//#endregion
 
 	//#region stores
-	let pageSize: Writable<number>;
-	if (_init.pageSizePersisted) {
-		pageSize = persisted<number>(
-			(_init.pageSizePersisted as PageSizePersisted).key,
-			_init.pageSize,
-			{ storage: (_init.pageSizePersisted as PageSizePersisted).location }
-		);
-	} else pageSize = writable<number>(_init.pageSize);
-
-	const rows = writable<Array<Type>>(_init.rows);
-
+	const pageSize = writable<number>(_init.pageSize);
 	const tokens = writable<string[]>(_init.tokens);
 	const currentCursor = writable<string>(_init.currentCursor);
 	const _canFetch = writable<boolean>(_init.canFetch);
@@ -109,8 +86,12 @@ export function createPagination<Type>(
 	//#region methods
 	const _preload = async () => {
 		// prefetch to see if there's more
-		const resp = await fn({ pageSize: get(pageSize), pageToken: get(nextCursor) });
-		if (!resp.data.length) _canFetch.set(false); // reached the end of cursor
+		const token = await fn({
+			pageSize: get(pageSize),
+			pageToken: get(nextCursor),
+			isPreload: true
+		});
+		if (!token) _canFetch.set(false); // reached the end of cursor
 	};
 
 	const _cursorAt = () => {
@@ -120,11 +101,13 @@ export function createPagination<Type>(
 	};
 
 	const fetch = async () => {
-		let resp = await fn({ pageSize: get(pageSize), pageToken: get(currentCursor) });
-		rows.set(resp.data);
-		nextCursor.set(resp.nextPageToken);
-
-		_preload();
+		let token = await fn({
+			pageSize: get(pageSize),
+			pageToken: get(currentCursor),
+			isPreload: false
+		});
+		nextCursor.set(token);
+		// _preload();
 	};
 
 	const next = async () => {
@@ -164,15 +147,14 @@ export function createPagination<Type>(
 		if (f >= 0) {
 			tokens.update((v) => v.slice(0, f)); // drop old tokens, since they aren't valid due to pagination changes
 			_canFetch.set(true); // reset the cursor to blank again;
+			await fetch();
 		}
-		await fetch();
 	});
 
 	//#endregion
 
 	return {
 		pageSize,
-		rows,
 		can: {
 			next: canNext,
 			back: canBack,

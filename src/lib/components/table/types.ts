@@ -1,4 +1,3 @@
-import type { ListResponse } from '$types/list';
 import type { ListProperties } from '$types/pagination';
 import type { ServerEvent } from '$types/utils';
 
@@ -7,7 +6,8 @@ export type Column<T> = {
 	row: (v: T) => string;
 };
 
-export type FetchFunc<Type> = (
-	p: ListProperties,
+export type Token = string;
+export type PaginatedFetchFunc = (
+	p: ListProperties & { isPreload: boolean },
 	event?: ServerEvent
-) => Promise<ListResponse<Type>>;
+) => Promise<Token>;

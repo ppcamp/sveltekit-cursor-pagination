@@ -1,5 +1,4 @@
-export type ListResponse<T> = {
-	data: Array<T>;
+export type ListResponse<T = {}> = T & {
 	nextPageToken: string;
 };
 
@@ -13,4 +12,4 @@ export type GotApiItem = {
 	quotes: string[];
 };
 
-export type GotApiItemList = ListResponse<GotApiItem>;
+export type GotApiItemList = ListResponse & { data: GotApiItem[] };
